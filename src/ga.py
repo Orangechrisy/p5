@@ -347,6 +347,38 @@ def generate_successors(population):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
+    if random.random() < 0.5:
+        x = 4
+        q = []
+        selection = []
+        for i in range(len(population)):
+            q.append((population[i]._fitness, i, population[i]))
+        for j in range(0, math.ceil(len(population) / x)):
+            selection.append(heapq.heappop(q)[2])
+        for parent in selection:
+            while len(results) < len(population):
+                children = parent.generate_children(random.choice(selection))
+                results.append(children[0])
+                results.append(children[1])
+        return results
+
+    totalFitness = 0
+    for Individual in population:
+        totalFitness += Individual._fitness
+    while len(results) < len(population):
+        selection = random.random() * totalFitness
+        for Parent in population:
+            selection -= Parent._fitness
+            if selection < 0:
+                secondChoice = random.random() * totalFitness
+                for Mate in population:
+                    secondChoice -= Mate._fitness
+                    if secondChoice < 0:
+                        children = Parent.generate_children(Mate)
+                        results.append(children[0])
+                        results.append(children[1])
+                        break
+                break
     return results
 
 
