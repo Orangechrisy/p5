@@ -77,7 +77,8 @@ class Individual_Grid(object):
 
     # Create zero or more children from self and other
     def generate_children(self, other):
-        new_genome = copy.deepcopy(self.genome)
+        first_genome = copy.deepcopy(self.genome)
+        second_genome = copy.deepcopy(other.genome)
         # Leaving first and last columns alone...
         # do crossover with other
         left = 1
@@ -86,9 +87,14 @@ class Individual_Grid(object):
             for x in range(left, right):
                 # STUDENT Which one should you take?  Self, or other?  Why?
                 # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
-                pass
+
+                if random.randint(1, 100) <= 10:
+                    new_genome = first_genome
+                    new_genome[y][x] = second_genome[y][x] if second_genome[y][x] != 'T' and second_genome[y][x] != '|' else first_genome[y][x]
+                else:
+                    pass
         # do mutation; note we're returning a one-element tuple here
-        return (Individual_Grid(new_genome),)
+        return (Individual_Grid(self.mutate(new_genome)))
 
     # Turn the genome into a level string (easy for this genome)
     def to_level(self):
@@ -417,7 +423,7 @@ def ga():
                     print("Max fitness:", str(best.fitness()))
                     print("Average generation time:", (now - start) / generation)
                     print("Net time:", now - start)
-                    with open("levels/last.txt", 'w') as f:
+                    with open("Player\Assets\Resources\Levels\last.txt", 'w') as f:
                         for row in best.to_level():
                             f.write("".join(row) + "\n")
                 generation += 1
