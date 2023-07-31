@@ -342,43 +342,44 @@ class Individual_DE(object):
 
 Individual = Individual_Grid
 
+def roulette_selection(population):
+    ac = []
+    tf = sum([child.fitness() for child in population])
+    rf = [child.fitness() / tf for child in population]
+    prb = [sum(rf[:(i+1)]) for i in range(int(len(rf)))]
+    for i in range(int(len(population))):
+        randNum = random.uniform(0, tf)
+        for j in range(int(len(population))):
+            if randNum <= prb[i]:
+                ac.append(population[i])
+                break
+    return ac
+
+def tournament_selection(population):
+    bc = []
+    random.shuffle(population)
+    for i in range(0, int(len(population) / 2)):
+        x = population[i]
+        y = population[-(i + 1)]
+        if x.fitness() > y.fitness():
+            bc.append(x)
+        else:
+            bc.append(y)
+    return bc
 
 def generate_successors(population):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
-    if random.random() < 0.5:
-        x = 4
-        q = []
-        selection = []
-        for i in range(len(population)):
-            q.append((population[i]._fitness, i, population[i]))
-        for j in range(0, math.ceil(len(population) / x)):
-            selection.append(heapq.heappop(q)[2])
-        for parent in selection:
-            while len(results) < len(population):
-                children = parent.generate_children(random.choice(selection))
-                results.append(children[0])
-                results.append(children[1])
-        return results
+    rc = roulette_selection(population)
+    tc = tournament_selection(population)
+    ac = rc + tc
+    for i in range(0, int(len(ac) / 2)):
+        fp = ac[i]
+        sp = ac[-(i + 1)]
+        results.append(fp.generate_children(sp))
+        results.append(sp.generate_children(fp))
 
-    totalFitness = 0
-    for Individual in population:
-        totalFitness += Individual._fitness
-    while len(results) < len(population):
-        selection = random.random() * totalFitness
-        for Parent in population:
-            selection -= Parent._fitness
-            if selection < 0:
-                secondChoice = random.random() * totalFitness
-                for Mate in population:
-                    secondChoice -= Mate._fitness
-                    if secondChoice < 0:
-                        children = Parent.generate_children(Mate)
-                        results.append(children[0])
-                        results.append(children[1])
-                        break
-                break
     return results
 
 
