@@ -46,11 +46,11 @@ class Individual_Grid(object):
         # STUDENT Modify this, and possibly add more metrics.  You can replace this with whatever code you like.
         coefficients = dict(
             meaningfulJumpVariance=0.5,
-            negativeSpace=0.6,
-            pathPercentage=0.5,
-            emptyPercentage=0.6,
-            linearity=-0.5,
-            solvability=2.0
+            negativeSpace=0.1,
+            pathPercentage=0.8,
+            emptyPercentage=0.8,
+            linearity=-1.5,
+            solvability=3.0
         )
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients))
@@ -72,6 +72,24 @@ class Individual_Grid(object):
         right = width - 1
         for y in range(height):
             for x in range(left, right):
+                # don't touch ground level
+                if y > 1:
+                    # keeps walls from floating
+                    if genome[y][x] == 'X':
+                        if genome[y-1][x] != 'X':
+                            # if two empty spaces below then make it a breakable block instead
+                            if y > 2:
+                                if genome[y-2][x] == '-':
+                                    genome[y][x] = 'B'
+                                else: # otherwise just empty
+                                    genome[y][x] = '-'
+                            else:
+                                genome[y][x] = '-'
+                    # keeps pipes from floating
+                    elif genome[y][x] == '|' or genome[y][x] == 'T':
+                        if genome[y-1][x] != '|' and y != height and (genome[y+1][x] != '|' or genome[y+1][x] != 'T'):
+                            genome[y][x] = '-'
+
                 pass
         return genome
 
@@ -418,6 +436,7 @@ def ga():
                 now = time.time()
                 # Print out statistics
                 if generation > 0:
+                    print("population size:", len(population))
                     best = max(population, key=Individual.fitness)
                     print("Generation:", str(generation))
                     print("Max fitness:", str(best.fitness()))
