@@ -49,9 +49,9 @@ class Individual_Grid(object):
             meaningfulJumpVariance=0.5,
             negativeSpace=0.5,
             pathPercentage=0.8,
-            emptyPercentage=0.8,
-            linearity=1.5,
-            solvability=4.0
+            emptyPercentage=0.7,
+            linearity=-0.5,
+            solvability=10.0
         )
         self._fitness = sum(map(lambda m: coefficients[m] * measurements[m],
                                 coefficients))
@@ -69,11 +69,13 @@ class Individual_Grid(object):
         # STUDENT also consider weighting the different tile types so it's not uniformly random
         # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
 
-        left = 1
+        left = 0
         right = width - 1
         for y in range(height):
             for x in range(left, right):
                 # don't touch ground level
+                if genome[y][x] == 'm' or genome[y][x] == 'v' or genome[y][x] == 'f':
+                    pass
                 if y < 15:
                     # keeps walls from floating
                     if genome[y][x] == 'X':
@@ -102,13 +104,21 @@ class Individual_Grid(object):
                                 genome[y + 1][x] != 'v' or genome[y + 1][x] != 'E' or genome[y + 1][x] != 'm':
                             genome[y][x] = '-'
                     elif genome[y][x] == '-':
-                        if genome[y+1][x] == 'B' or genome[y+1][x] == '?' or genome[y+1][x] == 'M':
+                        if genome[y+1][x] == 'B':
                             if random.randint(1, 100) <= 5:
                                 genome[y][x] = 'E'
+                        #elif random.randint(1, 100) <= 1:
+                        #    genome[y][x] = 'B'
+                        #elif random.randint(1, 100) <= 1:
+                        #    genome[y][x] = '?'
+                        #elif random.randint(1, 100) <= 1:
+                        #    genome[y][x] = 'M'
 
                 # keeps the ground ground (with a few holes)
                 if y == 15:
-                    if genome[y][x] == 'X':
+                    if x == 0:
+                        pass
+                    elif genome[y][x] == 'X':
                         if random.randint(1, 100) <= 5:
                             if genome[y-1][x] != 'X':
                                 genome[y][x] = '-'
@@ -136,12 +146,13 @@ class Individual_Grid(object):
 
                 if random.randint(1, 100) <= 10:
                     new_genome = first_genome
+                    #if random.randint(1, 100) <= 25: #use the second genome 1/4 of the time except if its a pipe
                     new_genome[y][x] = second_genome[y][x] if second_genome[y][x] != 'T' and second_genome[y][
                         x] != '|' else first_genome[y][x]
                 else:
                     pass
         # do mutation; note we're returning a one-element tuple here
-        return (Individual_Grid(self.mutate(new_genome)))
+        return (Individual_Grid(self.mutate(new_genome)), )
 
     # Turn the genome into a level string (easy for this genome)
     def to_level(self):
@@ -166,6 +177,8 @@ class Individual_Grid(object):
         # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
         # STUDENT also consider weighting the different tile types so it's not uniformly random
         g = [random.choices(options, k=width) for row in range(height)]
+        #g[:][0] = ["-"] * height
+        #g[:][-1] = ["-"] * height
         g[15][:] = ["X"] * width
         g[14][0] = "m"
         g[7][-1] = "v"
@@ -374,7 +387,7 @@ class Individual_DE(object):
     @classmethod
     def empty_individual(_cls):
         # STUDENT Maybe enhance this
-        g = []
+        g = [(random.randint(1, width - 2), "1_platform", random.randint(1, 8), height - 1, "X")]
         return Individual_DE(g)
 
     @classmethod
@@ -395,7 +408,7 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_Grid
+Individual = Individual_DE
 
 
 def roulette_selection(population):
@@ -423,7 +436,7 @@ def tournament_selection(population):
     return bc
 
 
-def generate_successors(population):
+def generate_successors(population, pop_limit):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
@@ -434,12 +447,13 @@ def generate_successors(population):
     print("tc size 3:", len(tc))
     ac = rc + tc
     for i in range(0, int(len(ac) / 2)):
+        if len(results) >= pop_limit * 2:
+            break
         fp = ac[i]
         sp = ac[-(i + 1)]
-        results.append(fp.generate_children(sp))
-        results.append(sp.generate_children(fp))
+        results.extend(fp.generate_children(sp))
+        results.extend(sp.generate_children(fp))
 
-    print("population size 2:", len(population))
     print("results size:", len(results))
     return results
 
@@ -459,6 +473,7 @@ def ga():
                       else Individual.empty_individual()
                       for _g in range(pop_limit)]
         # But leave this line alone; we have to reassign to population because we get a new population that has more cached stuff in it.
+        #print("population:", population)
         population = pool.map(Individual.calculate_fitness,
                               population,
                               batch_size)
@@ -473,7 +488,6 @@ def ga():
                 now = time.time()
                 # Print out statistics
                 if generation > 0:
-                    # print("population size 1:", len(population))
                     best = max(population, key=Individual.fitness)
                     print("Generation:", str(generation))
                     print("Max fitness:", str(best.fitness()))
@@ -489,7 +503,7 @@ def ga():
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
                 gentime = time.time()
-                next_population = generate_successors(population)
+                next_population = generate_successors(population, pop_limit)
                 print("population size ga:", len(population))
                 print("next population size ga:", len(next_population))
                 gendone = time.time()
