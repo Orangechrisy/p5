@@ -177,8 +177,9 @@ class Individual_Grid(object):
         # STUDENT consider putting more constraints on this to prevent pipes in the air, etc
         # STUDENT also consider weighting the different tile types so it's not uniformly random
         g = [random.choices(options, k=width) for row in range(height)]
-        #g[:][0] = ["-"] * height
-        #g[:][-1] = ["-"] * height
+        #g[:][-3] = ["-"] * height
+        #g[:][-2] = ["-"] * height
+        g[:][-1] = ["-"] * height
         g[15][:] = ["X"] * width
         g[14][0] = "m"
         g[7][-1] = "v"
@@ -226,11 +227,11 @@ class Individual_DE(object):
         # STUDENT Improve this with any code you like
         coefficients = dict(
             meaningfulJumpVariance=0.5,
-            negativeSpace=0.6,
+            negativeSpace=0.2,
             pathPercentage=0.5,
-            emptyPercentage=0.6,
+            emptyPercentage=0.3,
             linearity=-0.5,
-            solvability=2.0
+            solvability=4.0
         )
         penalties = 0
         # STUDENT For example, too many stairs are unaesthetic.  Let's penalize that
@@ -408,7 +409,7 @@ class Individual_DE(object):
         return Individual_DE(g)
 
 
-Individual = Individual_DE
+Individual = Individual_Grid
 
 
 def roulette_selection(population):
@@ -436,7 +437,7 @@ def tournament_selection(population):
     return bc
 
 
-def generate_successors(population, pop_limit):
+def generate_successors(population):
     results = []
     # STUDENT Design and implement this
     # Hint: Call generate_children() on some individuals and fill up results.
@@ -447,7 +448,7 @@ def generate_successors(population, pop_limit):
     print("tc size 3:", len(tc))
     ac = rc + tc
     for i in range(0, int(len(ac) / 2)):
-        if len(results) >= pop_limit * 2:
+        if len(results) >= 1000:
             break
         fp = ac[i]
         sp = ac[-(i + 1)]
@@ -503,7 +504,7 @@ def ga():
                     break
                 # STUDENT Also consider using FI-2POP as in the Sorenson & Pasquier paper
                 gentime = time.time()
-                next_population = generate_successors(population, pop_limit)
+                next_population = generate_successors(population)
                 print("population size ga:", len(population))
                 print("next population size ga:", len(next_population))
                 gendone = time.time()
